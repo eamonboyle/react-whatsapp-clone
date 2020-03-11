@@ -1,9 +1,8 @@
 import React, { useCallback } from 'react';
 import { Toolbar, Button } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
-import { History } from 'history';
 import styled from 'styled-components';
-import { ChatQueryResult } from './index';
+import { History } from 'history';
 
 const Container = styled(Toolbar)`
     padding: 0;
@@ -34,8 +33,11 @@ const Name = styled.div`
 `;
 
 interface ChatNavBarProps {
-    history: History,
-    chat: ChatQueryResult
+    history: History;
+    chat?: {
+        picture?: string | null;
+        name?: string | null;
+    };
 }
 
 const ChatNavBar: React.FC<ChatNavBarProps> = ({ history, chat }) => {
@@ -48,8 +50,12 @@ const ChatNavBar: React.FC<ChatNavBarProps> = ({ history, chat }) => {
             <BackButton data-testid="back-button" onClick={navBack}>
                 <ArrowBackIcon />
             </BackButton>
-            <Picture data-testid="chat-picture" src={chat.picture} />
-            <Name data-testid="chat-name">{chat.name}</Name>
+            {chat && chat.picture && chat.name && (
+                <React.Fragment>
+                    <Picture data-testid="chat-picture" src={chat.picture} />
+                    <Name data-testid="chat-name">{chat.name}</Name>
+                </React.Fragment>
+            )}
         </Container>
     );
 }
