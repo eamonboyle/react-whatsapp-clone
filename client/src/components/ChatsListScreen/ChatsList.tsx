@@ -4,8 +4,8 @@ import { List, ListItem } from '@material-ui/core';
 import styled from 'styled-components';
 import { useCallback } from 'react';
 import { History } from 'history';
-import gql from 'graphql-tag';
 import { useQuery } from '@apollo/react-hooks';
+import * as queries from '../../graphql/queries';
 
 const Container = styled.div`
   height: calc(100% - 56px);
@@ -59,72 +59,57 @@ const MessageDate = styled.div`
   font-size: 13px;
 `;
 
-export const getChatsQuery = gql`
-  query GetChats {
-    chats {
-      id
-      name
-      picture
-      lastMessage {
-        id
-        content
-        createdAt
-      }
-    }
-  }
-`;
-
 interface ChatsListProps {
-    history: History;
+  history: History;
 }
 
 const ChatsList: React.FC<ChatsListProps> = ({ history }) => {
-    const { data } = useQuery<any>(getChatsQuery);
+  const { data } = useQuery<any>(queries.chats);
 
-    const navToChat = useCallback(
-        chat => {
-            history.push(`chats/${chat.id}`);
-        },
-        [history]
-    );
+  const navToChat = useCallback(
+    chat => {
+      history.push(`chats/${chat.id}`);
+    },
+    [history]
+  );
 
-    if (data === undefined || data.chats === undefined) {
-        return null;
-    }
-    let chats = data.chats;
+  if (data === undefined || data.chats === undefined) {
+    return null;
+  }
+  let chats = data.chats;
 
-    return (
-        <Container>
-            <StyledList>
-                {chats.map((chat: any) => (
-                    <StyledListItem
-                        key={chat.id}
-                        data-testid="chat"
-                        button
-                        onClick={navToChat.bind(null, chat)}>
-                        <ChatPicture
-                            data-testid="picture"
-                            src={chat.picture}
-                            alt="Profile"
-                        />
-                        <ChatInfo>
-                            <ChatName data-testid="name">{chat.name}</ChatName>
-                            {chat.lastMessage && (
-                                <React.Fragment>
-                                    <MessageContent data-testid="content">
-                                        {chat.lastMessage.content}
-                                    </MessageContent>
-                                    <MessageDate data-testid="date">
-                                        {moment(chat.lastMessage.createdAt).format('HH:mm')}
-                                    </MessageDate>
-                                </React.Fragment>
-                            )}
-                        </ChatInfo>
-                    </StyledListItem>
-                ))}
-            </StyledList>
-        </Container>
-    );
+  return (
+    <Container>
+      <StyledList>
+        {chats.map((chat: any) => (
+          <StyledListItem
+            key={chat.id}
+            data-testid="chat"
+            button
+            onClick={navToChat.bind(null, chat)}>
+            <ChatPicture
+              data-testid="picture"
+              src={chat.picture}
+              alt="Profile"
+            />
+            <ChatInfo>
+              <ChatName data-testid="name">{chat.name}</ChatName>
+              {chat.lastMessage && (
+                <React.Fragment>
+                  <MessageContent data-testid="content">
+                    {chat.lastMessage.content}
+                  </MessageContent>
+                  <MessageDate data-testid="date">
+                    {moment(chat.lastMessage.createdAt).format('HH:mm')}
+                  </MessageDate>
+                </React.Fragment>
+              )}
+            </ChatInfo>
+          </StyledListItem>
+        ))}
+      </StyledList>
+    </Container>
+  );
 };
 
 export default ChatsList;
