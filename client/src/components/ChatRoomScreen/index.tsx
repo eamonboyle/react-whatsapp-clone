@@ -1,18 +1,22 @@
-import React, { useMemo, useState, useCallback } from 'react';
+
+import gql from 'graphql-tag';
+import React from 'react';
+import { useCallback } from 'react';
+import { useApolloClient, useQuery } from '@apollo/react-hooks';
 import styled from 'styled-components';
-import { History } from 'history';
-import ChatNavBar from './ChatNavbar';
-import MessagesList from './MessagesList';
+import ChatNavbar from './ChatNavbar';
 import MessageInput from './MessageInput';
+import MessagesList from './MessagesList';
+import { History } from 'history';
 
 const Container = styled.div`
-    display: url(/assets/chat-background.jpg);
-    display: flex;
-    flex-flow: column;
-    height: 100vh;
+  background: url(/assets/chat-background.jpg);
+  display: flex;
+  flex-flow: column;
+  height: 100vh;
 `;
 
-const getChatQuery = `
+const getChatQuery = gql`
   query GetChat($chatId: ID!) {
     chat(chatId: $chatId) {
       id
@@ -47,50 +51,51 @@ export interface ChatQueryResult {
 
 type OptionalChatQueryResult = ChatQueryResult | null;
 
-const ChatRoomScreen: React.FC<ChatRoomScreenParams> = ({ history, chatId }) => {
-    const [chat, setChat] = useState<OptionalChatQueryResult>(null);
-
-    useMemo(async () => {
-        const body = await fetch(`${process.env.REACT_APP_SERVER_URL}/graphql`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                query: getChatQuery,
-                variables: { chatId },
-            }),
-        });
-        const {
-            data: { chat },
-        } = await body.json();
-        setChat(chat);
-    }, [chatId]);
+const ChatRoomScreen: React.FC<ChatRoomScreenParams> = ({
+    history,
+    chatId,
+}) => {
+    const client = useApolloClient();
+    const {
+        data: { chat },
+    } = useQuery<any>(getChatQuery, {
+        variables: { chatId },
+    });
 
     const onSendMessage = useCallback(
         (content: string) => {
             if (!chat) return null;
+
             const message = {
                 id: (chat.messages.length + 10).toString(),
                 createdAt: new Date(),
                 content,
+                __typename: 'Chat',
             };
-            setChat({
-                ...chat,
-                messages: chat.messages.concat(message),
+
+            client.writeQuery({
+                query: getChatQuery,
+                variables: { chatId },
+                data: {
+                    chat: {
+                        ...chat,
+                        messages: chat.messages.concat(message),
+                    },
+                },
             });
         },
-        [chat]
+        [chat, chatId, client]
     );
 
     if (!chat) return null;
 
     return (
         <Container>
-            <ChatNavBar chat={chat} history={history} />
+            <ChatNavbar chat={chat} history={history} />
             {chat.messages && <MessagesList messages={chat.messages} />}
             <MessageInput onSendMessage={onSendMessage} />
         </Container>
     );
 };
+
 export default ChatRoomScreen;
