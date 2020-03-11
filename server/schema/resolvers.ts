@@ -13,6 +13,7 @@ const resolvers: Resolvers = {
 
         lastMessage(chat) {
             const lastMessage = chat.messages[chat.messages.length - 1];
+
             return messages.find(m => m.id === lastMessage) || null;
         },
     },
@@ -28,10 +29,10 @@ const resolvers: Resolvers = {
     },
 
     Mutation: {
-        addMessage(root, { chatId, content}) {
+        addMessage(root, { chatId, content }, { pubsub }) {
             const chatIndex = chats.findIndex(c => c.id === chatId);
 
-            if (chatIndex === 1) return null;
+            if (chatIndex === -1) return null;
 
             const chat = chats[chatIndex];
 
@@ -42,13 +43,25 @@ const resolvers: Resolvers = {
                 createdAt: new Date(),
                 content,
             };
-            
+
             messages.push(message);
             chat.messages.push(messageId);
+            // The chat will appear at the top of the ChatsList component
             chats.splice(chatIndex, 1);
             chats.unshift(chat);
 
+            pubsub.publish('messageAdded', {
+                messageAdded: message,
+            });
+
             return message;
+        },
+    },
+
+    Subscription: {
+        messageAdded: {
+            subscribe: (root, args, { pubsub }) =>
+                pubsub.asyncIterator('messageAdded'),
         },
     },
 };
